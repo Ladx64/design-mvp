@@ -1,12 +1,27 @@
-import streamlit as st
+from fastapi import FastAPI, UploadFile, File
+from fastapi.responses import JSONResponse
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 import os
 from dotenv import load_dotenv
 import base64
+import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables
 load_dotenv()
+
+# Initialize FastAPI app
+app = FastAPI(title="Design Analysis Tool")
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configure OpenAI
 llm = ChatOpenAI(
@@ -28,48 +43,55 @@ Analyze this design based on the following principles:
 Provide specific, actionable improvements for each relevant principle.
 """
 
-def encode_image_to_base64(image_file):
-    return base64.b64encode(image_file.getvalue()).decode('utf-8')
+async def encode_image_to_base64(image_file: bytes) -> str:
+    return base64.b64encode(image_file).decode('utf-8')
 
-# Streamlit UI
-st.title("Design Analysis Tool")
+@app.post("/analyze-design/")
+async def analyze_design(file: UploadFile = File(...)):
+    try:
+        # Read the file content
+        image_content = await file.read()
+        
+        # Encode the image
+        base64_image = await encode_image_to_base64(image_content)
+        
+        # Prepare the message for GPT-4 Vision
+        message = HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": DESIGN_PRINCIPLES
+                },
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:image/jpeg;base64,{base64_image}"
+                    }
+                }
+            ]
+        )
 
-# File uploader
-uploaded_file = st.file_uploader("Upload a design image", type=['png', 'jpg', 'jpeg'])
+        # Get the analysis
+        response = llm.invoke([message])
+        
+        return JSONResponse(content={
+            "status": "success",
+            "analysis": response.content
+        })
+            
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": str(e)
+            }
+        )
 
-if uploaded_file is not None:
-    # Display the uploaded image
-    st.image(uploaded_file, caption='Uploaded Design', use_column_width=True)
-    
-    # Analyze button
-    if st.button('Analyze Design'):
-        with st.spinner('Analyzing your design...'):
-            try:
-                # Encode the image
-                base64_image = encode_image_to_base64(uploaded_file)
-                
-                # Prepare the message for GPT-4 Vision
-                message = HumanMessage(
-                    content=[
-                        {
-                            "type": "text",
-                            "text": DESIGN_PRINCIPLES
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/jpeg;base64,{base64_image}"
-                            }
-                        }
-                    ]
-                )
+# Add a health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
-                # Get the analysis
-                response = llm.invoke([message])
-                
-                # Display the analysis
-                st.markdown("### Analysis Results")
-                st.write(response.content)
-                
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
