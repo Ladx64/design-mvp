@@ -3,13 +3,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Metadata } from "next";
 
-export default function UploadPage({
-  searchParams,
-}: {
+interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
-}) {
-  const imageUrl = searchParams.image as string;
+}
+
+function ImageDisplay({ src }: { src: string }) {
+  return (
+    <div className="relative w-full aspect-video">
+      <Image
+        src={src}
+        alt="Uploaded image"
+        fill
+        className="object-contain rounded-lg"
+        priority
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 1200px"
+      />
+    </div>
+  );
+}
+
+export async function generateMetadata(
+  { searchParams }: PageProps
+): Promise<Metadata> {
+  const params = await Promise.resolve(searchParams);
+  return {
+    title: params?.image ? 'Uploaded Image' : 'No Image Selected',
+  };
+}
+
+export default async function UploadPage({ searchParams }: PageProps) {
+  const params = await Promise.resolve(searchParams);
+  const imageUrl = String(params?.image || '');
 
   if (!imageUrl) {
     return (
@@ -46,15 +73,9 @@ export default function UploadPage({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="relative w-full aspect-video">
-            <Image
-              src={imageUrl}
-              alt="Uploaded image"
-              fill
-              className="object-contain rounded-lg"
-              priority
-            />
-          </div>
+          <Suspense fallback={<div className="w-full aspect-video bg-muted animate-pulse rounded-lg" />}>
+            <ImageDisplay src={imageUrl} />
+          </Suspense>
         </CardContent>
       </Card>
     </div>

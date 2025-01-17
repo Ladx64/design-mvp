@@ -11,6 +11,7 @@ export function UploadZone() {
   const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -44,10 +45,29 @@ export function UploadZone() {
     }
   }, []);
 
-  const handleUpload = useCallback(() => {
+  const handleUpload = useCallback(async () => {
     if (selectedFile) {
-      const imageUrl = URL.createObjectURL(selectedFile);
-      router.push(`/upload?image=${encodeURIComponent(imageUrl)}`);
+      try {
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+
+        const data = await response.json();
+        router.push(`/upload?image=${encodeURIComponent(data.url)}`);
+      } catch (error) {
+        console.error('Error uploading file:', error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   }, [selectedFile, router]);
 
@@ -101,8 +121,11 @@ export function UploadZone() {
                   </label>
                 </Button>
                 {selectedFile && (
-                  <Button onClick={handleUpload}>
-                    Upload
+                  <Button 
+                    onClick={handleUpload} 
+                    disabled={isUploading}
+                  >
+                    {isUploading ? "Uploading..." : "Upload"}
                   </Button>
                 )}
               </div>
