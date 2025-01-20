@@ -38,11 +38,23 @@ next-mas/
   - Loading states
   - Error handling
   - Image preview
+- Design Analysis:
+  - Integration with external analysis API
+  - Real-time design feedback
+  - Detailed analysis results display
+  - Error handling and status updates
 
 ## Pages
 - `/` - Main page with image upload functionality
-- `/upload` - Displays uploaded image with back navigation
+- `/upload` - Displays uploaded image and design analysis with back navigation
 - `/api/upload` - API endpoint for handling file uploads
+
+## External Services
+- Design Analysis API:
+  - Endpoint: http://127.0.0.1:8000/analyze-design
+  - POST request with image file
+  - Returns design analysis in JSON format
+  - Error handling with status and message fields
 
 ## File Storage
 - Uploaded files are stored in `/public/uploads`

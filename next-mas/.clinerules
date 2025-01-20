@@ -1,20 +1,5 @@
 # Project Guidelines
 
-## Documentation Requirements
-
--   Update relevant documentation in /docs when modifying features
--   Keep README.md in sync with new capabilities
--   Maintain changelog entries in CHANGELOG.md
-
-## Architecture Decision Records
-
-Create ADRs in /docs/adr for:
-
--   Major dependency changes
--   Architectural pattern changes
--   New integration patterns
--   Database schema changes
-
 ## Tech Stack
 -   Typescript is the primary language for this project.
 -   We are using bun as a replacement for node.js
@@ -34,6 +19,18 @@ Create ADRs in /docs/adr for:
 -   Integration tests for API endpoints
 -   E2E tests for critical user flows
 
+## Code Quality Rules
+
+1. Test Coverage:
+   - Before attempting completion, always make sure that any code changes have test coverage
+   - Ensure all tests pass before submitting changes
+
+2. Lint Rules:
+   - Never disable any lint rules without explicit user approval
+   - If a lint rule needs to be disabled, ask the user first and explain why
+   - Prefer fixing the underlying issue over disabling the lint rule
+   - Document any approved lint rule disabling with a comment explaining the reason
+
 # Security
 
 ## Sensitive Files
@@ -41,6 +38,8 @@ Create ADRs in /docs/adr for:
 DO NOT read or modify:
 
 -   .env files
+-   \*_/config/secrets._
+-   \*_/_.pem
 -   Any file containing API keys, tokens, or credentials
 
 ## Security Practices

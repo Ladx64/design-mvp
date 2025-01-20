@@ -3,15 +3,29 @@
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Upload, Check } from "lucide-react";
+import { Upload } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export function UploadZone() {
   const router = useRouter();
   const [isDragging, setIsDragging] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+
+  const navigateToAnalysis = useCallback((file: File) => {
+    // Store file in sessionStorage
+    const fileInfo = {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    };
+    sessionStorage.setItem('selectedFile', JSON.stringify(fileInfo));
+    
+    // Create object URL for the file
+    const fileUrl = URL.createObjectURL(file);
+    sessionStorage.setItem('fileUrl', fileUrl);
+    
+    router.push('/upload');
+  }, [router]);
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -31,56 +45,22 @@ export function UploadZone() {
     const files = Array.from(e.dataTransfer.files);
     if (files?.[0]) {
       if (files[0].type.startsWith("image/")) {
-        setSelectedFile(files[0]);
+        navigateToAnalysis(files[0]);
       }
     }
-  }, []);
+  }, [navigateToAnalysis]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files?.[0]) {
       if (files[0].type.startsWith("image/")) {
-        setSelectedFile(files[0]);
+        navigateToAnalysis(files[0]);
       }
     }
-  }, []);
-
-  const handleUpload = useCallback(async () => {
-    if (selectedFile) {
-      try {
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Upload failed');
-        }
-
-        const data = await response.json();
-        router.push(`/upload?image=${encodeURIComponent(data.url)}`);
-      } catch (error) {
-        console.error('Error uploading file:', error);
-      } finally {
-        setIsUploading(false);
-      }
-    }
-  }, [selectedFile, router]);
+  }, [navigateToAnalysis]);
 
   return (
-    <div className="w-full max-w-xl mx-auto space-y-4">
-      {selectedFile && (
-        <Alert className="flex items-center gap-2">
-          <Check className="h-4 w-4 flex-shrink-0" />
-          <AlertDescription>
-            Selected file: {selectedFile.name}
-          </AlertDescription>
-        </Alert>
-      )}
+    <div className="w-full max-w-xl mx-auto">
       <Card>
         <CardContent className="pt-6">
           <div
@@ -95,7 +75,7 @@ export function UploadZone() {
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center gap-4">
-        <Upload className="w-12 h-12 text-muted-foreground" />
+              <Upload className="w-12 h-12 text-muted-foreground" />
               <div className="text-center space-y-2">
                 <h3 className="font-medium">
                   Drop your image here
@@ -104,31 +84,21 @@ export function UploadZone() {
                   or click to select a file
                 </p>
               </div>
-        <input
-          type="file"
-          className="hidden"
-          accept="image/*"
-          onChange={handleFileSelect}
-          id="file-upload"
-        />
-              <div className="flex gap-4">
-                <Button
-                  variant="outline"
-                  asChild
-                >
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    Select File
-                  </label>
-                </Button>
-                {selectedFile && (
-                  <Button 
-                    onClick={handleUpload} 
-                    disabled={isUploading}
-                  >
-                    {isUploading ? "Uploading..." : "Upload"}
-                  </Button>
-                )}
-              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileSelect}
+                id="file-upload"
+              />
+              <Button
+                variant="outline"
+                asChild
+              >
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  Select File
+                </label>
+              </Button>
             </div>
           </div>
         </CardContent>

@@ -25,9 +25,10 @@ app.add_middleware(
 
 # Configure OpenAI
 llm = ChatOpenAI(
-    model="gpt-4o-mini",
+    model="chatgpt-4o-latest",
     max_tokens=1000,
-    temperature=0.7
+    temperature=0.7,
+    base_url=os.getenv("OPENAI_API_BASE_URL"),
 )
 
 DESIGN_PRINCIPLES = """
@@ -94,4 +95,4 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)
