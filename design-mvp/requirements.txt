@@ -5,3 +5,4 @@ python-dotenv>=1.0.0
 langchain-core>=0.1.27
 langchain-anthropic>=0.1.1
 anthropic>=0.18.1
+PyPDF2>=3.0.0
